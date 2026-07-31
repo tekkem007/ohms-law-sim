@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <!-- iOS Safari can't full-screen an ordinary element, so "Add to Home
+         Screen" is the chrome-free route there. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <!-- Autumn Bloom surface colours. -->
+    <meta name="theme-color" content="#faf3e8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)" />
+    <!-- Autumn Bloom webfonts. `display=swap` + local serif/mono fallbacks in
+         styles.css mean the sim stays readable if these never arrive. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Faculty+Glyphic&family=Sorts+Mill+Goudy:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    />
+    <title>Ohm's Law — Ideal DC Circuit</title>
+  </head>
+  <body>
+    <!-- Shown only on a narrow PORTRAIT screen, where the side-by-side bench is
+         cramped. Auto-dismisses the moment the device is turned. -->
+    <div id="rotate-prompt" class="rotate-prompt" hidden>
+      <div class="rotate-card" role="dialog" aria-labelledby="rotate-title">
+        <svg class="rotate-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <rect x="20" y="6" width="24" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="3" />
+          <line x1="27" y1="12" x2="37" y2="12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+          <path d="M12 50 a22 22 0 0 0 40 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+          <polygon points="52,44 58,52 46,52" fill="currentColor" />
+        </svg>
+        <h2 id="rotate-title">Rotate your device</h2>
+        <p>
+          This simulation puts the circuit and its controls side by side. Turn your
+          phone sideways for the full bench.
+        </p>
+        <button type="button" id="rotate-dismiss" class="btn">Continue anyway</button>
+      </div>
+    </div>
+
+    <div class="app">
+      <header class="app-header">
+        <div class="header-row">
+          <div class="header-titles">
+            <h1>Ohm's Law — Ideal DC Circuit</h1>
+            <!-- The instruction lives on the controls heading; this line carries
+                 only the physics, so the two don't say the same thing. -->
+            <p class="subtitle">
+              Current and power follow <strong>I = V / R</strong> and
+              <strong>P = V × I</strong>.
+            </p>
+          </div>
+          <div class="header-actions">
+            <button
+              type="button"
+              class="btn btn-graph-toggle"
+              data-graph-toggle
+              aria-controls="graph-drawer"
+              aria-expanded="false"
+            >
+              <span class="btn-icon" aria-hidden="true">📈</span>
+              <span class="btn-label">V–I Graph</span>
+            </button>
+            <!-- Revealed by main.ts only where the Fullscreen API really works,
+                 so no dead button ships on iOS Safari. -->
+            <button type="button" id="fullscreen-btn" class="btn btn-fs" aria-pressed="false" hidden>
+              <svg class="fs-ico" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+                <path class="fs-enter" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+                  fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                <path class="fs-exit" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"
+                  fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span class="btn-label fs-label">Full screen</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="layout">
+        <!-- CONTROLS + READOUTS (left) -->
+        <section class="panel panel-controls" aria-labelledby="controls-heading">
+          <h2 id="controls-heading">Set the voltage and resistance</h2>
+
+          <!-- Two upright gauges, read like lab instruments: value on top, the
+               control beneath it, range at the foot. -->
+          <div class="gauges">
+            <div class="gauge">
+              <label class="gauge-label" for="voltage-slider">Voltage</label>
+              <span class="gauge-value"><span id="val-voltage">0.0</span> <span class="unit">V</span></span>
+              <input
+                type="range"
+                id="voltage-slider"
+                class="v-slider"
+                min="0"
+                max="20"
+                step="0.1"
+                value="0"
+                list="voltage-ticks"
+                orient="vertical"
+                role="slider"
+                aria-label="Battery voltage in volts"
+              />
+              <datalist id="voltage-ticks">
+                <option value="0"></option>
+                <option value="5"></option>
+                <option value="10"></option>
+                <option value="15"></option>
+                <option value="20"></option>
+              </datalist>
+              <span class="gauge-range" aria-hidden="true">0 – 20 V</span>
+            </div>
+
+            <!-- The second independent input, chosen in fixed 5 Ω increments. -->
+            <div class="gauge">
+              <span class="gauge-label" id="resistance-label">Resistance</span>
+              <span class="gauge-value"><span id="val-resistance">10</span> <span class="unit">Ω</span></span>
+              <div class="stepper-v" role="group" aria-labelledby="resistance-label">
+                <button type="button" id="r-inc" class="step-btn" aria-label="Increase resistance by 5 ohms">+</button>
+                <div class="stepper-track" aria-hidden="true"><div id="r-fill" class="stepper-fill"></div></div>
+                <button type="button" id="r-dec" class="step-btn" aria-label="Decrease resistance by 5 ohms">−</button>
+              </div>
+              <span class="gauge-range" aria-hidden="true">5 – 50 Ω</span>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- RESULTS — its own region so landscape can run controls | circuit | results -->
+        <section class="panel panel-results" aria-labelledby="results-heading">
+          <h2 id="results-heading" class="section-label">Results</h2>
+          <div class="cards" role="group" aria-label="Calculated results">
+            <div class="card">
+              <span class="card-label">Current</span>
+              <span class="card-value"><span id="val-current">0.00</span> <span class="unit">A</span></span>
+            </div>
+            <div class="card">
+              <span class="card-label">Power</span>
+              <span class="card-value"><span id="val-power">0.00</span> <span class="unit">W</span></span>
+            </div>
+          </div>
+
+          <details class="working">
+            <summary>Show the working</summary>
+            <div class="equations" aria-label="Live equations">
+              <p id="eq-ohm" class="equation"></p>
+              <p id="eq-power" class="equation"></p>
+            </div>
+          </details>
+        </section>
+
+        <!-- CIRCUIT (right) -->
+        <section class="panel panel-circuit" aria-labelledby="circuit-heading">
+          <h2 id="circuit-heading">Circuit</h2>
+          <div id="circuit-mount" class="svg-mount"></div>
+
+          <p class="note">
+            The moving markers are a symbolic representation of conventional current.
+            They do not show the actual speed of electrons.
+          </p>
+          <p class="note">
+            The glow is a relative indicator of power, not a temperature simulation.
+            More resistance at the same voltage means less current — so the bulb dims.
+          </p>
+
+        </section>
+      </main>
+    </div>
+
+    <!-- Dimming backdrop (mobile only); tap to close. -->
+    <div id="drawer-backdrop" class="drawer-backdrop"></div>
+
+    <!-- GRAPH — a collapsible panel that slides in from the right. -->
+    <aside id="graph-drawer" class="graph-drawer" aria-labelledby="graph-heading" aria-hidden="true">
+      <div class="drawer-head">
+        <h2 id="graph-heading">Voltage vs Current</h2>
+        <button type="button" id="graph-close" class="btn-close" aria-label="Close graph">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+      <div id="graph-mount" class="svg-mount"></div>
+      <p class="note note-muted">
+        The line is drawn from V = R × I (slope = 10 Ω). The point uses exact
+        values and always lies on the line.
+      </p>
+    </aside>
+
+    <!-- Screen-reader live description of the current state -->
+    <p id="sr-status" class="visually-hidden" role="status" aria-live="polite"></p>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

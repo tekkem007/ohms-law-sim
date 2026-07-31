@@ -1,0 +1,1107 @@
+/* styles.css — layout, theming, and restrained microinteractions.
+ *
+ * Only DECORATIVE properties animate here (opacity, colour). Measured values
+ * never ease. The current-marker glow uses transitions on opacity only; large
+ * blurs and backdrop filters are avoided in the continuous path, and a
+ * non-blurred translucent fallback is provided where backdrop-filter is absent.
+ */
+
+:root {
+  /* Dark is the default, matching the source design system. */
+  color-scheme: dark light;
+
+  /* ==================================================================
+     AUTUMN BLOOM — the shared design system (from the Jigyasa app).
+     Canonical token names are kept verbatim so this block can be lifted
+     into any other simulation unchanged.
+     ================================================================== */
+
+  /* Typography. Local fallbacks are listed so the sim still reads correctly
+     if the webfonts fail or the device is offline. */
+  --font-display: 'Faculty Glyphic', Georgia, 'Times New Roman', serif;
+  --font-body: 'Sorts Mill Goudy', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  /* Named palette */
+  --ruddy: #e07a3a;
+  --ruddy-light: #f09558;
+  --ruddy-dark: #bd692b;
+  --terracotta: #c94a1a;
+  --terracotta-light: #e05a2a;
+  --terracotta-dark: #872e0e;
+  --royal: #4a72a8;
+  --royal-light: #6090c8;
+  --royal-dark: #2d548a;
+  --olive: #8ba85c;
+  --olive-light: #a5c274;
+  --olive-dark: #5d6739;
+  --pewter: #96aeba;
+  --pewter-light: #b5c9d3;
+  --pewter-dark: #7a95a3;
+
+  /* Surfaces + text (dark mode) */
+  --background: #0d1117;
+  --background-secondary: #161b22;
+  --foreground: #f5e6d3;
+  --foreground-intense: #ffffff;
+  --card: #161b22;
+  --card-variant: #21262d;
+  --muted: #21262d;
+  --muted-foreground: #c4b8a8;
+  --border: #30363d;
+
+  /* Roles */
+  --primary: var(--ruddy);
+  --primary-foreground: #ffffff;
+  --secondary: var(--royal);
+  --chart-1: var(--ruddy);
+  --chart-2: var(--royal);
+  --chart-3: var(--olive);
+  --chart-4: var(--pewter);
+  --chart-5: var(--terracotta);
+
+  /* ---- Sim-local aliases -------------------------------------------
+     Every rule below reads these, so the whole sheet re-themes from the
+     tokens above. NOTE: Autumn Bloom's own `--accent` is the terracotta
+     *destructive/emphasis* colour; the main INTERACTIVE colour on the
+     source site is `--primary` (ruddy), so that is what `--accent` maps
+     to here. Terracotta is exposed as `--accent-warm`. */
+  --bg: var(--background);
+  --bg-2: var(--background-secondary);
+  --surface: var(--card);
+  --surface-translucent: rgba(22, 27, 34, 0.72);
+  --surface-solid-fallback: var(--card);
+  --text: var(--foreground);
+  --text-muted: var(--muted-foreground);
+
+  --accent: var(--primary); /* current markers, active point, controls */
+  --accent-strong: var(--ruddy-light);
+  --accent-warm: var(--terracotta);
+  --wire: var(--pewter);
+  --pos: var(--terracotta-light); /* + terminal */
+  --neg: var(--pewter); /* − terminal */
+  --power-glow: var(--ruddy); /* warm relative-power indicator */
+  --theory: var(--pewter-dark);
+  --grid: rgba(245, 230, 211, 0.1);
+
+  --radius: 12px;
+  --shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+
+  /* ---- Fluid spacing scale (the layout's ANCHOR) --------------------
+     One scale drives the page frame, every panel and the grid gap, so they grow
+     and shrink together and no panel can drift relative to another.
+     Anchored to `vmin` — the SMALLER viewport edge — on purpose: `vw` would give
+     a short landscape phone tall padding it has no height for, and `vh` would
+     give a narrow portrait phone wide padding it has no width for. `vmin` scales
+     evenly at any aspect ratio and any resolution, so no per-orientation padding
+     override is needed. */
+  --pad-page: clamp(0.5rem, 1.7vmin, 1.5rem);
+  --pad-panel: clamp(0.7rem, 2.3vmin, 1.4rem);
+  --gap-layout: clamp(0.5rem, 1.5vmin, 1.15rem);
+
+  /* Width of the sliding graph drawer — fluid, so it scales with the viewport
+     instead of jumping. The 92vw ceiling keeps a sliver of page visible on the
+     narrowest phones; the px clamp keeps it readable on huge displays. */
+  --drawer-w: min(92vw, clamp(280px, 34vw, 460px));
+
+  /* Single source of truth for the dock breakpoint — gated on WIDTH *and*
+     HEIGHT. Width alone docked the graph on a 1000×447 landscape phone, stealing
+     ~340px so the circuit drew SMALLER at a larger viewport. Below this the
+     drawer OVERLAYS (there isn't room for both); at or above it DOCKS beside the
+     content. Keep in sync with DOCK_QUERY in main.ts. */
+  --dock-min: 960px;
+  --dock-min-height: 560px;
+}
+
+/* AUTUMN BLOOM — LIGHT MODE.
+   Only the CANONICAL tokens are overridden; every sim-local alias derives from
+   them with var(), so the whole sheet follows automatically. Written twice on
+   purpose: once for the OS preference (unless the viewer has forced dark) and
+   once for an explicit data-theme, so a manual toggle wins in both directions. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --background: #faf3e8;
+    --background-secondary: #f4e9d8;
+    --foreground: #3a2a20;
+    --foreground-intense: #2a1d15;
+    --card: #fffdf8;
+    --card-variant: #f4e9d8;
+    --muted: #efe3d2;
+    /* DEVIATION from the source token (#917866). That reads 4.06:1 on the
+       light card — below WCAG AA 4.5:1 for text this small. #7b6150 keeps
+       the same warm-brown hue and clears AA on card (5.63), page (5.19)
+       and muted (4.52) surfaces. Dark mode needs no change (8.87:1). */
+    --muted-foreground: #7b6150;
+    --border: #e4d6c2;
+    --primary: #c94a1a;
+    --primary-foreground: #fffdf8;
+    --secondary: #3f6694;
+    --chart-1: #c94a1a;
+    --chart-2: #3f6694;
+    --chart-3: #7d8b3f;
+    --chart-4: #b07a2a;
+    --chart-5: #95684f;
+    /* Aliases that can't simply invert. */
+    --surface-translucent: rgba(255, 253, 248, 0.72);
+    --accent-strong: var(--terracotta-dark);
+    --wire: var(--pewter-dark);
+    --pos: var(--terracotta);
+    --neg: var(--pewter-dark);
+    --power-glow: var(--ruddy);
+    --theory: var(--pewter-dark);
+    --grid: rgba(58, 42, 32, 0.1);
+    --shadow: 0 6px 20px rgba(58, 42, 32, 0.12);
+  }
+}
+
+:root[data-theme='light'] {
+  --background: #faf3e8;
+  --background-secondary: #f4e9d8;
+  --foreground: #3a2a20;
+  --foreground-intense: #2a1d15;
+  --card: #fffdf8;
+  --card-variant: #f4e9d8;
+  --muted: #efe3d2;
+  --muted-foreground: #7b6150; /* see contrast note in the media-query block */
+  --border: #e4d6c2;
+  --primary: #c94a1a;
+  --primary-foreground: #fffdf8;
+  --secondary: #3f6694;
+  --chart-1: #c94a1a;
+  --chart-2: #3f6694;
+  --chart-3: #7d8b3f;
+  --chart-4: #b07a2a;
+  --chart-5: #95684f;
+  --surface-translucent: rgba(255, 253, 248, 0.72);
+  --accent-strong: var(--terracotta-dark);
+  --wire: var(--pewter-dark);
+  --pos: var(--terracotta);
+  --neg: var(--pewter-dark);
+  --power-glow: var(--ruddy);
+  --theory: var(--pewter-dark);
+  --grid: rgba(58, 42, 32, 0.1);
+  --shadow: 0 6px 20px rgba(58, 42, 32, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background: radial-gradient(1200px 800px at 15% -10%, var(--bg-2), var(--bg));
+  background-attachment: fixed;
+  min-height: 100vh;
+  min-height: 100dvh;
+  line-height: 1.5;
+  /* A drawer parked off-screen to the right must not create horizontal scroll. */
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  /* Diagram/label text is not content to select — stop the click from dropping a
+     text caret (I-beam) into SVG <text>. Equations stay selectable below. */
+  -webkit-user-select: none;
+  user-select: none;
+  /* Smoothly reflow when the docked drawer opens/closes on wide screens. */
+  transition: padding-right 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Keep the live equations copyable. */
+.equation {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* No I-beam cursor over the diagrams. */
+.circuit-svg,
+.graph-svg,
+.circuit-svg text,
+.graph-svg text {
+  cursor: default;
+}
+
+.app {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--pad-page);
+  /* Honour notches / rounded corners on phones. */
+  padding-left: max(var(--pad-page), env(safe-area-inset-left));
+  padding-right: max(var(--pad-page), env(safe-area-inset-right));
+  /* A flex column so .layout can claim the leftover height and every panel can
+     share one bottom edge (see the 700px block). `dvh` tracks mobile browser
+     chrome showing/hiding, unlike `vh`. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* --- Header ----------------------------------------------------------- */
+.header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.header-titles {
+  min-width: 0;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: 600 1rem var(--font-body);
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+.btn:hover {
+  border-color: var(--accent);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-graph-toggle {
+  flex: none;
+}
+.header-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  flex: none;
+}
+
+/* Full-screen toggle: one glyph swaps for the other via aria-pressed, so the
+   button's visual state can only ever come from the real fullscreen state. */
+.btn-fs .fs-exit {
+  display: none;
+}
+.btn-fs[aria-pressed='true'] .fs-enter {
+  display: none;
+}
+.btn-fs[aria-pressed='true'] .fs-exit {
+  display: inline;
+}
+.fs-ico {
+  flex: none;
+}
+
+/* Browsers paint the fullscreen backdrop opaque BLACK by default, which frames a
+   light theme in black bars — repaint both it and the root. */
+:root:fullscreen {
+  background: var(--bg);
+}
+:root:fullscreen::backdrop {
+  background: var(--bg);
+}
+.btn:focus-visible,
+.btn-close:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.app-header h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+  font-size: clamp(0.98rem, 2.6vw, 1.1rem);
+}
+
+/* --- Layout ------------------------------------------------------------
+   Named areas let each orientation arrange the three regions independently
+   of DOM order. DOM order is controls → results → circuit (so the interactive
+   controls come first for keyboard/AT); the areas below decide what the eye
+   sees at each size. */
+.panel-controls {
+  grid-area: controls;
+}
+.panel-circuit {
+  grid-area: circuit;
+}
+.panel-results {
+  grid-area: results;
+}
+
+/* Narrow / portrait phones: one column, and THE VISUAL LEADS — the circuit sits
+   on top with the controls beneath it, so the drawing stays in view while the
+   thumb works the gauges. */
+.layout {
+  display: grid;
+  gap: var(--gap-layout);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'circuit'
+    'controls'
+    'results';
+  max-width: 700px;
+  margin-inline: auto;
+  align-items: start;
+}
+
+/* THE BENCH: three columns — controls | circuit | results. A landscape phone has
+   plenty of width and almost no height, so three columns is what lets a student
+   move a gauge and watch both the circuit and the numbers at the same time.
+   minmax(0,…) lets a column shrink below its content width, which is what stops
+   the SVG forcing an overflow.
+
+   The SECOND half of this query is what keeps a landscape phone out of the
+   portrait stack: 660×400 is easily wide enough for three columns but sat below
+   the 700px cut, and stacking a short screen cost 2.15 screens of scroll. Width
+   alone cannot express aspect ratio. */
+@media (min-width: 700px), (orientation: landscape) and (min-width: 560px) {
+  .layout {
+    grid-template-columns: minmax(150px, 0.85fr) minmax(0, 1.7fr) minmax(140px, 0.8fr);
+    grid-template-areas: 'controls circuit results';
+    grid-template-rows: minmax(0, 1fr);
+    max-width: none;
+    /* Fill the viewport and let every panel share one top and one bottom. */
+    flex: 1;
+    min-height: 0;
+    align-items: stretch;
+  }
+  .layout > .panel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+  }
+  /* The heading shouldn't be centred with the content it labels. */
+  .layout > .panel > h2 {
+    flex: none;
+  }
+}
+
+/* NOTE: the orientation-specific compaction blocks live at the END of this
+   file. A media query adds NO specificity — it only wins on source order — so
+   placed here they were silently overridden by the component rules below (the
+   portrait slider stayed 200px instead of 138px). See "ORIENTATION PASSES". */
+
+/* --- Panels (translucent with a safe fallback) ------------------------ */
+.panel {
+  background: var(--surface-solid-fallback); /* fallback if no backdrop-filter */
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--pad-panel);
+  box-shadow: var(--shadow);
+}
+
+@supports ((backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px))) {
+  .panel {
+    background: var(--surface-translucent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+}
+
+.panel h2 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.svg-mount {
+  width: 100%;
+}
+/* ANCHOR: each SVG carries preserveAspectRatio="xMidYMid meet", so when a
+   max-height caps it the drawing scales down and stays centred inside its box —
+   it never stretches, crops, or spills over neighbouring content.
+   The height caps are viewport-RELATIVE (svh = small viewport height, stable
+   while mobile browser chrome shows/hides), so a short or landscape screen gets
+   a proportionally smaller diagram instead of one that pushes everything off. */
+.svg-mount svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  margin-inline: auto;
+}
+.panel-circuit .svg-mount svg {
+  /* Larger now that the assumptions panel no longer competes for height. */
+  max-height: clamp(200px, 54svh, 480px);
+}
+.graph-drawer .svg-mount svg {
+  max-height: clamp(180px, 46svh, 420px);
+}
+
+/* --- Circuit SVG element styling -------------------------------------- */
+.wire {
+  stroke: var(--wire);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+/* Light bulb (the fixed 10 Ω load). */
+.bulb-glass {
+  fill: var(--pewter-light);
+  fill-opacity: 0.5;
+  stroke: var(--pewter-dark);
+  stroke-width: 2.5;
+}
+.bulb-halo {
+  opacity: 0; /* driven by voltage in circuit-renderer */
+  transition: opacity 140ms ease-out;
+  pointer-events: none;
+}
+.bulb-core {
+  opacity: 0; /* driven by voltage in circuit-renderer */
+  transition: opacity 140ms ease-out;
+  pointer-events: none;
+}
+.filament line,
+.filament path {
+  stroke: var(--pewter-dark);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.terminal {
+  font: 700 15px var(--font-mono);
+}
+.terminal.pos {
+  fill: var(--pos);
+}
+.terminal.neg {
+  fill: var(--neg);
+}
+/* Polarity marks printed on the battery body. */
+.batt-mark {
+  font: 800 20px var(--font-mono);
+}
+.batt-mark.pos {
+  fill: #3a2a20;
+}
+.batt-mark.on-blue {
+  fill: #ffffff;
+}
+.current-arrow .arrow-shaft {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+.current-arrow .arrow-head {
+  fill: var(--accent);
+}
+.current-arrow {
+  transition: opacity 140ms ease-out;
+}
+.circuit-label {
+  font: 600 13px var(--font-mono);
+  fill: var(--text);
+}
+/* Constants read quieter than live values. */
+.circuit-label.muted {
+  font-weight: 500;
+  fill: var(--text-muted);
+}
+.current-marker {
+  fill: var(--accent);
+}
+
+/* --- Graph SVG element styling --------------------------------------- */
+.axis {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+.gridline {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+.tick {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+.tick-label {
+  font: 500 14px var(--font-mono);
+  fill: var(--text-muted);
+}
+.axis-title {
+  font: 600 15px var(--font-body);
+  fill: var(--text-muted);
+}
+.theory-line {
+  stroke: var(--theory);
+  stroke-width: 2.5;
+  stroke-dasharray: 6 5;
+}
+.slope-label {
+  font: 600 14px var(--font-mono);
+  fill: var(--theory);
+}
+.guide {
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+}
+.active-point {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.coord-label {
+  font: 700 15px var(--font-mono);
+  fill: var(--text);
+}
+
+/* --- Vertical gauges (voltage + resistance) --------------------------- */
+/* Both inputs stand upright like bench instruments: name, live value, the
+   control itself, then its range. Reading top-to-bottom mirrors the way the
+   value rises as the control rises. */
+.gauges {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(0.5rem, 2vw, 1.25rem);
+  margin-bottom: 1rem;
+  justify-items: center;
+}
+.gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.gauge-label {
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--text-muted);
+}
+.gauge-value {
+  font-family: var(--font-mono);
+  font-size: clamp(1.25rem, 4.5vw, 1.75rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.gauge-value .unit {
+  font-size: 0.62em;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.gauge-range {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+/* Shared column height for both controls, so the two gauges line up. */
+.v-slider,
+.stepper-v {
+  height: clamp(120px, 26svh, 200px);
+}
+
+/* Vertical stepper: +  above  [fill]  above  − */
+.stepper-v {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+.step-btn {
+  width: 44px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--accent);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+.step-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.step-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.step-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.step-btn:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Upright track; the fill grows from the BOTTOM so more resistance reads as a
+   taller bar, matching the slider beside it. */
+.stepper-track {
+  position: relative;
+  flex: 1;
+  width: 10px;
+  min-height: 0;
+  border-radius: 999px;
+  background: var(--grid);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.stepper-fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 11.1%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: height 160ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Vertical range input. `writing-mode: vertical-lr` + `direction: rtl` is the
+   modern way to stand a range up with its MINIMUM at the bottom; the WebKit
+   appearance keyword is the fallback for older Safari.
+   touch-action must NOT be pan-y here — a vertical drag belongs to the slider,
+   not the page scroller. */
+.v-slider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  width: 40px; /* generous touch target */
+  accent-color: var(--accent);
+  cursor: pointer;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* The datalist gives native tick marks in Chromium; hide its default text so
+   only the marks show. */
+#voltage-ticks {
+  display: none;
+}
+
+/* --- Value cards ------------------------------------------------------ */
+/* Small caption that separates "what you set" from "what you get". */
+.section-label {
+  margin: 0 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Result cards reflow to however many fit, no breakpoint per case. */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+/* The constant is context, not a result — a quiet chip instead of a card that
+   competes with the live values. */
+.fixed-chip {
+  margin: 0 0 1rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--surface);
+}
+.fixed-chip strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Working is available on demand rather than always on screen. */
+.working {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  background: var(--surface);
+}
+.working summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--text-muted);
+}
+.working .equations {
+  margin-top: 0.55rem;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.card-label {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.card-label em {
+  text-transform: none;
+  font-style: normal;
+  opacity: 0.8;
+}
+.card-value {
+  font-family: var(--font-mono);
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.card-value .unit {
+  font-size: 0.7em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+/* --- Equations -------------------------------------------------------- */
+.equations {
+  display: grid;
+  gap: 0.4rem;
+}
+.equation {
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--font-mono);
+  font-size: clamp(0.78rem, 2.6vw, 0.95rem);
+  font-variant-numeric: tabular-nums;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* --- Notes + disclosure ---------------------------------------------- */
+/* Required honesty captions: kept visible, but sized as footnotes so they
+   support the diagram instead of competing with it. */
+.note {
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin: 0.4rem 0 0;
+}
+.note-muted {
+  opacity: 0.85;
+}
+
+/* --- Graph drawer (slides in from the right) ------------------------- */
+.graph-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  height: 100dvh;
+  width: var(--drawer-w);
+  max-width: 100%;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -14px 0 34px rgba(8, 16, 34, 0.22);
+  padding: calc(env(safe-area-inset-top) + 1rem) max(1rem, env(safe-area-inset-right))
+    calc(env(safe-area-inset-bottom) + 1rem) 1rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* Closed: parked off-screen, and taken out of the tab order via visibility. */
+  transform: translateX(100%);
+  visibility: hidden;
+  transition:
+    transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 280ms;
+}
+body.graph-open .graph-drawer {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.drawer-head h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.btn-close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-close:hover {
+  border-color: var(--accent);
+}
+
+/* Desktop: dock the drawer open by pushing the content left (no overlap). */
+/* ANCHOR: the drawer is pinned to the viewport's right edge, so when it docks we
+   shrink the PAGE's content box by exactly the drawer width. `.app` then centres
+   itself inside what's left. Padding the centred `.app` instead would let it drift
+   under the drawer on ultra-wide screens (its auto margins ignore the drawer). */
+@media (min-width: 960px) and (min-height: 560px) {
+  body.graph-open {
+    padding-right: var(--drawer-w);
+  }
+}
+
+/* --- Dimming backdrop (phones only) ---------------------------------- */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(6, 12, 26, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 260ms ease,
+    visibility 0s linear 260ms;
+}
+body.graph-open .drawer-backdrop {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 260ms ease;
+}
+@media (min-width: 960px) and (min-height: 560px) {
+  .drawer-backdrop {
+    display: none; /* keep the slider usable beside the docked graph */
+  }
+}
+
+/* --- Rotate prompt (narrow portrait only) ----------------------------- */
+.rotate-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: var(--bg);
+}
+.rotate-prompt[hidden] {
+  display: none;
+}
+.rotate-card {
+  max-width: 22rem;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 1.25rem;
+  box-shadow: var(--shadow);
+}
+.rotate-icon {
+  width: 72px;
+  height: 72px;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+/* A gentle nudge, not a loop — it plays a few times and stops. */
+@media (prefers-reduced-motion: no-preference) {
+  .rotate-icon {
+    animation: tilt 2.4s ease-in-out 3;
+    transform-origin: 50% 60%;
+  }
+}
+@keyframes tilt {
+  0%,
+  55%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25%,
+  40% {
+    transform: rotate(-90deg);
+  }
+}
+.rotate-card h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.rotate-card p {
+  margin: 0 0 1rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+/* --- Accessibility helper -------------------------------------------- */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Reduced motion: no continuously moving particles ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  .current-marker {
+    display: none; /* the controller also creates none; belt and braces */
+  }
+  .bulb-halo,
+  .bulb-core,
+  .current-arrow,
+  * {
+    transition: none !important;
+  }
+}
+
+/* --- Very narrow (down to 320px) ------------------------------------- */
+@media (max-width: 380px) {
+  .cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ======================================================================
+   ORIENTATION PASSES — must be LAST in this file.
+
+   A media query carries no extra specificity; it only wins on source order.
+   Placed earlier, every rule here was silently beaten by the component styles
+   above (the portrait slider kept its 200px default instead of 138px), so all
+   orientation compaction lives at the end.
+   ====================================================================== */
+
+/* --- Short screens (landscape phones): compact the CHROME, not the values -- */
+@media (orientation: landscape) and (max-height: 620px) {
+  .app-header h1 {
+    font-size: clamp(1.05rem, 2.6vw, 1.35rem);
+    margin-bottom: 0.1rem;
+  }
+  .subtitle {
+    margin-bottom: 0.4rem;
+    font-size: 0.95rem;
+  }
+  .note {
+    font-size: 0.92rem;
+  }
+  .panel h2 {
+    margin-bottom: 0.4rem;
+  }
+  .v-slider,
+  .stepper-v {
+    height: clamp(88px, 34svh, 150px);
+  }
+  .gauges {
+    margin-bottom: 0.5rem;
+  }
+  .cards {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* --- PORTRAIT PHONES: their own pass; they inherit none of the above ------ */
+@media (orientation: portrait) and (max-width: 620px) {
+  .app-header h1 {
+    font-size: clamp(1.1rem, 5vw, 1.35rem);
+    margin-bottom: 0.1rem;
+  }
+  .subtitle {
+    font-size: 0.95rem;
+    margin-bottom: 0.45rem;
+  }
+  .panel h2 {
+    margin-bottom: 0.4rem;
+  }
+  /* The gauge column is the single biggest height thief in portrait. */
+  .v-slider,
+  .stepper-v {
+    height: clamp(96px, 16svh, 150px);
+  }
+  .gauges {
+    margin-bottom: 0.5rem;
+  }
+  .gauge-value {
+    font-size: clamp(1.15rem, 5.5vw, 1.5rem);
+  }
+  .note {
+    margin-top: 0.3rem;
+  }
+  
+/* Very short landscape (≈375px tall phones): the h1 already names the sim, so
+   the formula line is the cheapest thing to drop to reach one screen. */
+@media (orientation: landscape) and (max-height: 430px) {
+  .subtitle {
+    display: none;
+  }
+}
+
+/* Narrow headers: two buttons + a title won't fit, so collapse the buttons to
+   icons. Visually-hidden (not display:none) so each keeps its accessible name. */
+@media (max-width: 560px) {
+  .btn-label {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .btn {
+    padding: 0.5rem 0.65rem;
+    gap: 0;
+  }
+}
+
+/* SVG TEXT LEGIBILITY — the sizes live in a stylesheet generated at runtime by
+   setupSvgTextScale() in main.ts (id="svg-text-scale"). An SVG scales uniformly,
+   so its in-viewBox text shrinks with the drawing (13px -> 9.3px on a 375px
+   phone); that function measures each SVG and emits `#mount .label{font-size}`
+   rules holding the RENDERED size to a floor.
+
+   Two purely-CSS attempts failed first and are worth not repeating: a
+   `@container` version stopped matching once the panel became a flex container,
+   and `font-size: var(--fs-…, 13px)` lost the cascade to the base `font:`
+   shorthand even with the variable correctly set. The generated rules are keyed
+   on the mount's id, so they win on specificity AND order. */
+

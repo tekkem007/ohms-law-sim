@@ -1,0 +1,19 @@
+{
+  "name": "ohms-law-sim",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Ideal steady-state DC Ohm's law simulator (fixed R = 10 Ω, voltage-controlled).",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8"
+  }
+}
