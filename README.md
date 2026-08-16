@@ -1,12 +1,14 @@
 # Ohm's Law — Ideal DC Circuit
 
-An interactive, scientifically-honest Ohm's law simulator. Voltage is the only
-input; current and power follow from an **ideal, steady-state DC lumped-circuit
-model** with a fixed resistor.
+**[▶ Open the live simulator](https://tekkem007.github.io/ohms-law-sim/)**
+
+An interactive, scientifically-honest Ohm's law simulator. Voltage and resistance
+are the two independent inputs; current and power are always **derived** from an
+**ideal, steady-state DC lumped-circuit model**.
 
 ```text
-R = 10 Ω          (fixed, ohmic, no thermal dependence)
-0 V ≤ V ≤ 20 V    (the only independent quantity)
+0 V  ≤ V ≤ 20 V              (adjustable)
+5 Ω  ≤ R ≤ 50 Ω, in 5 Ω steps (adjustable)
 I = V / R
 P = V × I
 ```
@@ -14,19 +16,23 @@ P = V × I
 Built with **Vite + TypeScript + inline SVG**. No Phaser, no GSAP, no runtime
 dependencies.
 
-## Mobile & the graph drawer
+## What it shows
 
-The layout is a single centred column optimised for phones (touch-sized slider,
-safe-area insets, no horizontal scroll down to 320px). The voltage–current graph
-lives in a **collapsible panel that slides in from the right**:
+- An illustrated closed circuit — a battery and a light **bulb** as the ohmic
+  load — with animated markers for **conventional current** (clockwise, out of
+  the + terminal), and a glow that tracks **power**, so raising R at a fixed
+  voltage visibly dims the bulb.
+- A **voltage–current graph** with deliberately fixed axes, so changing the
+  resistance visibly changes the **slope** of `V = R · I` — that is the lesson.
+- A live worked calculation behind "Show the working".
 
-- On phones it is **closed by default** — tap the edge handle, the header
-  **V–I Graph** button, or the graph icon to slide it in over a dimming backdrop;
-  tap the backdrop, the **×**, or press **Escape** to close.
-- On wide screens it is **docked open** by default and pushes the content left so
-  it never overlaps the controls; the same button collapses it.
+## Layout
 
-The graph keeps updating live whether the drawer is open or closed.
+A three-column bench (controls · circuit · results) on landscape phones,
+tablets and desktops; a single column with the circuit on top in portrait, plus
+a rotate prompt and a full-screen toggle. The graph lives in a **collapsible
+drawer that slides in from the right** — closed by default on phones, docked
+open on large screens — and keeps updating whether it is open or not.
 
 ## Model assumptions
 
